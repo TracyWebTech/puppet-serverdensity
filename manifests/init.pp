@@ -65,6 +65,8 @@ class serverdensity(
   $logging_level = '',
   ) {
 
+  $location = '/etc/sd-agent/config.cfg'
+
   if ($ensure == 'present') {
     case $::operatingsystem {
       'Debian', 'Ubuntu': {
@@ -77,50 +79,55 @@ class serverdensity(
         fail("OSfamily ${::operatingsystem} not supported.")
       }
     }
+
     $service_ensure = running
+
+    class {
+      'config_file':
+        location            => $location,
+        require             => Package['sd-agent'],
+        sd_url              => $sd_url,
+        agent_key           => agent_key(
+          $api_username,
+          $api_password,
+          $sd_url,
+          $api_token,
+          $agent_key,
+          $server_name,
+          $server_group,
+          $use_fqdn
+          ),
+        plugin_directory    => $plugin_directory,
+        apache_status_url   => $apache_status_url,
+        apache_status_user  => $apache_status_user,
+        apache_status_pass  => $apache_status_pass,
+        fpm_status_url      => $fpm_status_url,
+        mongodb_server      => $mongodb_server,
+        mongodb_dbstats     => $mongodb_dbstats,
+        mongodb_replset     => $mongodb_replset,
+        mysql_server        => $mysql_server,
+        mysql_user          => $mysql_user,
+        mysql_pass          => $mysql_pass,
+        nginx_status_url    => $nginx_status_url,
+        rabbitmq_status_url => $rabbitmq_status_url,
+        rabbitmq_user       => $rabbitmq_user,
+        rabbitmq_pass       => $rabbitmq_pass,
+        tmp_directory       => $tmp_directory,
+        pidfile_directory   => $pidfile_directory,
+        logging_level       => $logging_level,
+        notify              => Service['sd-agent']
+    }
   } else {
+    class { 'config_file':
+      location => $location,
+      ensure   => absent,
+    }
     package { 'sd-agent':
       ensure => absent,
     }
     $service_ensure = stopped
   }
 
-  class {
-    'config_file':
-      ensure              => $ensure,
-      location            => '/etc/sd-agent/config.cfg',
-      require             => Package['sd-agent'],
-      sd_url              => $sd_url,
-      agent_key           => agent_key(
-        $api_username,
-        $api_password,
-        $sd_url,
-        $api_token,
-        $agent_key,
-        $server_name,
-        $server_group,
-        $use_fqdn
-        ),
-      plugin_directory    => $plugin_directory,
-      apache_status_url   => $apache_status_url,
-      apache_status_user  => $apache_status_user,
-      apache_status_pass  => $apache_status_pass,
-      fpm_status_url      => $fpm_status_url,
-      mongodb_server      => $mongodb_server,
-      mongodb_dbstats     => $mongodb_dbstats,
-      mongodb_replset     => $mongodb_replset,
-      mysql_server        => $mysql_server,
-      mysql_user          => $mysql_user,
-      mysql_pass          => $mysql_pass,
-      nginx_status_url    => $nginx_status_url,
-      rabbitmq_status_url => $rabbitmq_status_url,
-      rabbitmq_user       => $rabbitmq_user,
-      rabbitmq_pass       => $rabbitmq_pass,
-      tmp_directory       => $tmp_directory,
-      pidfile_directory   => $pidfile_directory,
-      logging_level       => $logging_level,
-      notify              => Service['sd-agent']
-  }
 
   service {
     'sd-agent':
