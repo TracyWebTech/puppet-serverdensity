@@ -64,18 +64,27 @@ class serverdensity(
   $pidfile_directory = '',
   $logging_level = '',
   ) {
-  case $::operatingsystem {
-    'Debian', 'Ubuntu': {
-      include apt
-        $location = '/etc/sd-agent/config.cfg'
+
+  if ($ensure == 'present') {
+    case $::operatingsystem {
+      'Debian', 'Ubuntu': {
+        include apt
+          $location = '/etc/sd-agent/config.cfg'
+      }
+      'RedHat', 'centos': {
+        include yum
+          $location = '/etc/sd-agent/config.cfg'
+      }
+      default: {
+        fail("OSfamily ${::operatingsystem} not supported.")
+      }
     }
-    'RedHat', 'centos': {
-      include yum
-        $location = '/etc/sd-agent/config.cfg'
+    $service_ensure = running
+  } else {
+    package { 'sd-agent':
+      ensure => absent,
     }
-    default: {
-      fail("OSfamily ${::operatingsystem} not supported.")
-    }
+    $service_ensure = stopped
   }
 
   class {
@@ -113,12 +122,6 @@ class serverdensity(
       pidfile_directory   => $pidfile_directory,
       logging_level       => $logging_level,
       notify              => Service['sd-agent']
-  }
-
-  if ($ensure == 'absent') {
-    $service_ensure = stopped
-  } else {
-    $service_ensure = running
   }
 
   service {
