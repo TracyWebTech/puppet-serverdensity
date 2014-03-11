@@ -42,6 +42,7 @@ class serverdensity(
   $api_password = '',
   $use_fqdn = false,
   $agent_key = $::agent_key,
+  $ensure = present,
   $server_name = '',
   $server_group = '',
   $plugin_directory = '',
@@ -79,6 +80,7 @@ class serverdensity(
 
   class {
     'config_file':
+      ensure              => $ensure,
       location            => $location,
       require             => Package['sd-agent'],
       sd_url              => $sd_url,
@@ -113,9 +115,15 @@ class serverdensity(
       notify              => Service['sd-agent']
   }
 
+  if ($ensure == 'absent') {
+    $service_ensure = stopped
+  } else {
+    $service_ensure = running
+  }
+
   service {
     'sd-agent':
-      ensure    => running,
+      ensure    => $service_ensure,
       name      => 'sd-agent',
       pattern   => 'python /usr/bin/sd-agent/agent.py start init --clean',
       # due to https://bugs.launchpad.net/ubuntu/+source/upstart/+bug/552786
