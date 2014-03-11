@@ -69,11 +69,9 @@ class serverdensity(
     case $::operatingsystem {
       'Debian', 'Ubuntu': {
         include apt
-          $location = '/etc/sd-agent/config.cfg'
       }
       'RedHat', 'centos': {
         include yum
-          $location = '/etc/sd-agent/config.cfg'
       }
       default: {
         fail("OSfamily ${::operatingsystem} not supported.")
@@ -90,7 +88,7 @@ class serverdensity(
   class {
     'config_file':
       ensure              => $ensure,
-      location            => $location,
+      location            => '/etc/sd-agent/config.cfg',
       require             => Package['sd-agent'],
       sd_url              => $sd_url,
       agent_key           => agent_key(
